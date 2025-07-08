@@ -1,0 +1,107 @@
+body {
+  font-family: 'Segoe UI', sans-serif;
+  margin: 0;
+  padding: 20px;
+}
+
+.chat-window {
+  padding: 20px;
+  border-radius: 8px;
+  max-width: 600px;
+  margin: auto;
+  box-shadow: 0 0 10px rgba(0,0,0,0.1);
+}
+
+.chat-window.dark {
+  background-color: #2a2a2a;
+  color: #f1f1f1;
+}
+
+.chat-window.light {
+  background-color: #f8f8f8;
+  color: #111;
+}
+
+.messages {
+  max-height: 400px;
+  overflow-y: auto;
+  margin-bottom: 1rem;
+}
+
+.message {
+  display: flex;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  margin-right: 10px;
+}
+
+.bubble {
+  background-color: #444;
+  color: white;
+  padding: 10px 14px;
+  border-radius: 12px;
+}
+
+.chat-window.light .bubble {
+  background-color: #e2e2e2;
+  color: #111;
+}
+
+.controls {
+  display: flex;
+  gap: 10px;
+}
+
+.controls input {
+  flex: 1;
+  padding: 10px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+}
+
+.controls button {
+  padding: 10px 14px;
+  background-color: #6c63ff;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.controls button:hover {
+  background-color: #4d46d2;
+}
+
+.theme-toggle {
+  margin-bottom: 1rem;
+  padding: 6px 12px;
+  font-size: 0.9rem;
+  border: none;
+  border-radius: 6px;
+  background-color: #888;
+  color: white;
+  cursor: pointer;
+}
+
+.theme-toggle:hover {
+  background-color: #666;
+}
+
+.typing span {
+  display: inline-block;
+  animation: blink 1s infinite alternate;
+}
+
+.typing span:nth-child(2) { animation-delay: 0.2s; }
+.typing span:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes blink {
+  0% { opacity: 0.1; }
+  100% { opacity: 1; }
+}

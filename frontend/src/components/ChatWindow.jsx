@@ -1,6 +1,18 @@
 import React, { useState, useRef, useEffect } from "react";
 import axios from "axios";
+import botAvatar from "../assets/bot.png";
+import userAvatar from "../assets/user.png";
 import "../styles.css";
+
+// Step constants
+const STEPS = {
+  NAME: 0,
+  GOAL: 1,
+  INCOME_START: 2,
+  EXPENSE_START: 8, // (income fields count + 2)
+  QNA: 16,          // (income + expense fields count + 2)
+  DOWNLOAD: 17      // one after QNA
+};
 
 const incomeSources = [
   "Job", "Side-hustle", "Family support", "Scholarships", "Reimbursements", "Tax refunds"
@@ -10,208 +22,339 @@ const expenseCategories = [
 ];
 
 export default function ChatWindow() {
-  const [step, setStep] = useState(0);
+  const [theme, setTheme] = useState("light");
+  const [fontSize, setFontSize] = useState(1.0);
+  const [step, setStep] = useState(STEPS.NAME);
   const [userState, setUserState] = useState({
-    name: "", goal: "", income: {}, expenses: {}, qna: "", insights: ""
+    name: "",
+    goal: "",
+    income: {},
+    expenses: {},
+    qna: ""
   });
   const [input, setInput] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [chatResponse, setChatResponse] = useState("");
+  const [qaInput, setQaInput] = useState("");
+  const [qaResponse, setQaResponse] = useState(null);
   const [spreadsheetUrl, setSpreadsheetUrl] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  // Auto-focus input on step/response change
+  const [messages, setMessages] = useState([
+    { from: "bot", text: "Hello, I am FinBot, your AI Budgeting Assistant.\nGet ready to answer some questions.\n What is your name?" }
+  ]);
   const inputRef = useRef(null);
+  const chatEndRef = useRef(null);
+
   useEffect(() => {
     if (inputRef.current) inputRef.current.focus();
-  }, [step, loading, chatResponse]);
+  }, [step, loading, qaResponse]);
 
-  // Debug print for state
   useEffect(() => {
-    console.log("🟢 Frontend state:", { step, userState });
-  }, [step, userState]);
+    if (chatEndRef.current) chatEndRef.current.scrollIntoView({ behavior: "smooth" });
+  }, [messages, qaResponse, loading]);
+
+  const handleRestart = () => {
+    setMessages([
+      { from: "bot", text: "Hello, I am FinBot, your AI Budgeting Assistant.\nGet ready to answer some questions.\n What is your name?" }
+    ]);
+    setStep(STEPS.NAME);
+    setUserState({
+      name: "",
+      goal: "",
+      income: {},
+      expenses: {},
+      qna: ""
+    });
+    setInput("");
+    setQaInput("");
+    setQaResponse(null);
+    setSpreadsheetUrl("");
+  };
+
+  const addMessage = (from, text) => {
+    setMessages(prev => [...prev, { from, text }]);
+  };
 
   // Stepper logic
-  const handleNext = (field) => {
-    setUserState(s => ({ ...s, [field]: input }));
-    setInput("");
-    setStep(step + 1);
-  };
-
-  const handleMultiNext = (field, key, value) => {
-    setUserState(s => ({
-      ...s,
-      [field]: { ...s[field], [key]: value }
-    }));
-    setInput("");
-    setStep(step + 1);
-  };
-
-  const sendLLM = async (stepName) => {
-    setLoading(true);
-    try {
-      const res = await axios.post("http://localhost:8000/chat", {
-        step: stepName,
-        user_state: userState,
-      });
-      console.log("🟢 Frontend got:", res.data);
-      setChatResponse(res.data.response);
+  const handleBudgetStepper = () => {
+    if (!input.trim()) return;
+    if (step === STEPS.NAME) {
+      addMessage("user", input);
+      setUserState(s => ({ ...s, name: input }));
+      setInput("");
+      setTimeout(() => {
+        addMessage("bot", "What is your main financial goal this month?");
+        setStep(STEPS.GOAL);
+      }, 350);
+    } else if (step === STEPS.GOAL) {
+      addMessage("user", input);
+      setUserState(s => ({ ...s, goal: input }));
+      setInput("");
+      setTimeout(() => {
+        addMessage("bot", `How much do you get monthly from your ${incomeSources[0]}?`);
+        setStep(STEPS.INCOME_START);
+      }, 350);
+    } else if (step >= STEPS.INCOME_START && step < STEPS.EXPENSE_START) {
+      const idx = step - STEPS.INCOME_START;
+      addMessage("user", `$${input} from ${incomeSources[idx]}`);
       setUserState(s => ({
         ...s,
-        last_bot_message: res.data.response,
-        insight_text: stepName === "insights" ? res.data.response : s.insight_text
+        income: { ...s.income, [incomeSources[idx]]: Number(input) }
       }));
-    } catch (err) {
-      console.error(err);
-      setChatResponse("Oops! Something went wrong.");
+      setInput("");
+      if (idx + 1 < incomeSources.length) {
+        setTimeout(() => {
+          addMessage("bot", `How much do you get monthly from your ${incomeSources[idx + 1]}?`);
+          setStep(step + 1);
+        }, 350);
+      } else {
+        setTimeout(() => {
+          addMessage("bot", `How much do you spend monthly on ${expenseCategories[0]}?`);
+          setStep(STEPS.EXPENSE_START);
+        }, 350);
+      }
+    } else if (step >= STEPS.EXPENSE_START && step < STEPS.QNA) {
+      const idx = step - STEPS.EXPENSE_START;
+      addMessage("user", `$${input} for ${expenseCategories[idx]}`);
+      setUserState(s => ({
+        ...s,
+        expenses: { ...s.expenses, [expenseCategories[idx]]: Number(input) }
+      }));
+      setInput("");
+      if (idx + 1 < expenseCategories.length) {
+        setTimeout(() => {
+          addMessage("bot", `How much do you spend monthly on ${expenseCategories[idx + 1]}?`);
+          setStep(step + 1);
+        }, 350);
+      } else {
+        setTimeout(() => {
+          addMessage("bot", "All set! Now you can ask me any question about your income, spending or money management.\n I'll give you actionable tips based on your info.");
+          setStep(STEPS.QNA);
+        }, 350);
+      }
     }
-    setLoading(false);
   };
 
-  const download = async () => {
+  // Q&A logic
+  const QNA_STEP = 16; // Should match STEPS.QNA in your backend
+
+const askQuestion = async () => {
+  setLoading(true);
+  addMessage("user", qaInput);
+
+  try {
+    const res = await axios.post("http://localhost:8000/chat", {
+      step: QNA_STEP,
+      user_state: {
+        name: userState.name,
+        goal: userState.goal,
+        income: userState.income,
+        expenses: userState.expenses,
+        qna: qaInput
+      }
+    });
+
+    setQaResponse(res.data.response);
+
+    // Render as a chat bubble (bot message)
+    if (typeof res.data.response === "object" && res.data.response !== null && "summary" in res.data.response) {
+      let answer = res.data.response.summary;
+      if (res.data.response.tips && res.data.response.tips.length > 0) {
+        answer += "\n" + res.data.response.tips.map((tip) => `• ${tip}`).join("\n");
+      }
+      addMessage("bot", answer);
+    } else {
+      addMessage("bot", res.data.response);
+    }
+    setQaInput("");
+  } catch (error) {
+    setQaResponse("Sorry, could not get an answer.");
+    addMessage("bot", "Sorry, could not get an answer.");
+  }
+  setLoading(false);
+};
+
+
+  // Download spreadsheet
+  const downloadSpreadsheet = async () => {
     setLoading(true);
     try {
       const res = await axios.post("http://localhost:8000/export-budget", userState, { responseType: "blob" });
       const url = URL.createObjectURL(new Blob([res.data]));
       setSpreadsheetUrl(url);
-      console.log("🟢 Frontend downloaded spreadsheet");
+      addMessage("bot", "Your budget spreadsheet is ready!");
     } catch (err) {
-      console.error(err);
+      alert("Download failed.");
     }
     setLoading(false);
   };
 
-  // Step-by-step chat UI
+  const fontSizePct = Math.round(fontSize * 100);
+
+  // Chat rendering (with CSS Grid for avatars and bubbles)
   return (
-    <div className="chat-window">
-      {/* Step 0: Greeting */}
-      {step === 0 && (
-        <div className="bot-bubble">
-          <h2>Hello, I am FinBot, your AI Budgeting Assistant.</h2>
-          <button onClick={() => setStep(1)}>Start</button>
-        </div>
-      )}
-      {/* Step 1: Name */}
-      {step === 1 && (
-        <div className="bot-bubble">
-          <p>What is your name?</p>
+    <div className={`chat-window-modern ${theme}`} style={{ fontSize: `${fontSize}em` }}>
+      <div className="theme-toggle-row">
+        <button
+          aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
+          title={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
+          className="theme-toggle-btn"
+          tabIndex={0}
+          onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+        >
+          {theme === "dark" ? "Light" : "Dark"}
+        </button>
+        <button
+          aria-label={`Increase font size (current: ${fontSizePct}%)`}
+          className="font-size-btn"
+          tabIndex={0}
+          style={{ marginLeft: 8 }}
+          onClick={() => setFontSize(f => Math.min(f + 0.15, 1.7))}
+        >+</button>
+        <button
+          aria-label={`Decrease font size (current: ${fontSizePct}%)`}
+          className="font-size-btn"
+          tabIndex={0}
+          style={{ marginLeft: 2 }}
+          onClick={() => setFontSize(f => Math.max(f - 0.15, 0.7))}
+        >-</button>
+        <button
+          className="restart-btn"
+          tabIndex={0}
+          aria-label="Restart conversation"
+          style={{ marginLeft: 16 }}
+          onClick={handleRestart}
+        >Restart</button>
+      </div>
+      <div className="chat-scrollbox gradient-bg">
+        {messages.map((msg, i) => (
+          <div
+            key={i}
+            className={`bubble-row ${msg.from === "user" ? "right" : "left"}`}
+          >
+            <div className="bubble-grid">
+              <img
+                src={msg.from === "user" ? userAvatar : botAvatar}
+                alt={msg.from === "user" ? "User avatar" : "FinBot avatar"}
+                className="bubble-avatar"
+              />
+              <div
+                className={msg.from === "user" ? "user-bubble bubble-animate" : "bot-bubble bubble-animate"}
+                tabIndex={0}
+                role="status"
+                aria-live="polite"
+              >
+                <span style={{ flex: 1 }}>{msg.text}</span>
+              </div>
+            </div>
+          </div>
+        ))}
+        <div ref={chatEndRef} />
+      </div>
+
+      {/* === Stepper logic for wizard === */}
+      {(step === STEPS.NAME || step === STEPS.GOAL ||
+        (step >= STEPS.INCOME_START && step < STEPS.EXPENSE_START) ||
+        (step >= STEPS.EXPENSE_START && step < STEPS.QNA)) && (
+        <div className="input-row">
           <input
             ref={inputRef}
+            type={step >= STEPS.INCOME_START && step < STEPS.QNA ? "number" : "text"}
             value={input}
             onChange={e => setInput(e.target.value)}
-            onKeyDown={e => e.key === "Enter" && handleNext("name")}
+            onKeyDown={e => e.key === "Enter" && handleBudgetStepper()}
+            aria-label="Your answer"
+            style={{ flex: 1, minWidth: 0 }}
+            disabled={loading}
+            tabIndex={0}
           />
-          <button onClick={() => handleNext("name")}>Next</button>
-        </div>
-      )}
-      {/* Step 2: Financial Goal */}
-      {step === 2 && (
-        <div className="bot-bubble">
-          <p>What is your financial goal this month?</p>
-          <input
-            ref={inputRef}
-            value={input}
-            onChange={e => setInput(e.target.value)}
-            onKeyDown={e => e.key === "Enter" && handleNext("goal")}
-          />
-          <button onClick={() => handleNext("goal")}>Next</button>
-        </div>
-      )}
-      {/* Step 3: Confirmation */}
-      {step === 3 && (
-        <div className="bot-bubble">
-          <p>You wanna know what I think about your financial goal?</p>
-          <button onClick={() => setStep(step + 1)}>Yes</button>
-          <button onClick={() => setStep(step + 1)}>No</button>
-        </div>
-      )}
-      {/* Income collection */}
-      {step >= 4 && step < 4 + incomeSources.length && (() => {
-        const idx = step - 4;
-        const label = incomeSources[idx];
-        return (
-          <div className="bot-bubble">
-            <p>How much do you get from {label}?</p>
-            <input
-              ref={inputRef}
-              type="number"
-              value={input}
-              onChange={e => setInput(e.target.value)}
-              onKeyDown={e => e.key === "Enter" && input && handleMultiNext("income", label, Number(input))}
-            />
-            <button
-              onClick={() => input && handleMultiNext("income", label, Number(input))}
-              disabled={!input}
-            >
-              Next
-            </button>
-          </div>
-        );
-      })()}
-      {/* Expenses collection */}
-      {step >= 4 + incomeSources.length && step < 4 + incomeSources.length + expenseCategories.length && (() => {
-        const idx = step - (4 + incomeSources.length);
-        const label = expenseCategories[idx];
-        return (
-          <div className="bot-bubble">
-            <p>How much do you spend on {label}?</p>
-            <input
-              ref={inputRef}
-              type="number"
-              value={input}
-              onChange={e => setInput(e.target.value)}
-              onKeyDown={e => e.key === "Enter" && input && handleMultiNext("expenses", label, Number(input))}
-            />
-            <button
-              onClick={() => input && handleMultiNext("expenses", label, Number(input))}
-              disabled={!input}
-            >
-              Next
-            </button>
-          </div>
-        );
-      })()}
-      {/* Insights */}
-      {step === 4 + incomeSources.length + expenseCategories.length && (
-        <div className="bot-bubble">
-          <p>Insights for optimizing your money management skills</p>
-          <button onClick={() => sendLLM("insights")} disabled={loading}>
-            {loading ? "Thinking..." : "Get Insights"}
+          <button
+            className="bubble-action-btn"
+            onClick={handleBudgetStepper}
+            disabled={loading || !input.trim()}
+            aria-label="Send"
+            tabIndex={0}
+          >
+            Send
           </button>
-          {chatResponse && <div className="insights">{chatResponse}</div>}
-          {chatResponse && <button onClick={() => setStep(step + 1)}>Next</button>}
         </div>
       )}
-      {/* Q&A */}
-      {step === 5 + incomeSources.length + expenseCategories.length && (
-        <div className="bot-bubble">
-          <p>Do you have any questions about your money management or budgeting?</p>
+
+      {/* === Q&A Step === */}
+      {step === STEPS.QNA && (
+        <div className="bot-bubble bubble-animate">
+          <label htmlFor="qna-input">Ask a question about your budget or money:</label>
           <input
+            id="qna-input"
+            type="text"
             ref={inputRef}
-            value={userState.qna}
-            onChange={e => setUserState(s => ({ ...s, qna: e.target.value }))}
-            onKeyDown={e => e.key === "Enter" && sendLLM("qna")}
+            value={qaInput}
+            onChange={e => setQaInput(e.target.value)}
+            onKeyDown={e => e.key === "Enter" && askQuestion()}
+            aria-label="Your budgeting question"
+            style={{ marginTop: 6, marginBottom: 10 }}
+            disabled={loading}
           />
-          <button onClick={() => sendLLM("qna")} disabled={loading}>
+          <button
+            className="bubble-action-btn"
+            onClick={askQuestion}
+            disabled={loading || !qaInput.trim()}
+          >
             {loading ? "Thinking..." : "Ask"}
           </button>
-          {chatResponse && <div className="insights">{chatResponse}</div>}
-          <button onClick={() => setStep(step + 1)}>Next</button>
+          {qaResponse && (
+            <div style={{ marginTop: 14 }}>
+              {typeof qaResponse === "object" && qaResponse !== null && "summary" in qaResponse && "tips" in qaResponse ? (
+                <>
+                  <strong>Answer:</strong>
+                  <div style={{ margin: "10px 0" }}>{qaResponse.summary}</div>
+                  {qaResponse.tips && qaResponse.tips.length > 0 && (
+                    <ul style={{ marginBottom: 12 }}>
+                      {qaResponse.tips.map((tip, i) => (
+                        <li key={i} style={{ marginLeft: 12 }}>{tip}</li>
+                      ))}
+                    </ul>
+                  )}
+                </>
+              ) : (
+                <div>{qaResponse}</div>
+              )}
+              <div style={{ display: "flex", gap: 10, marginTop: 8 }}>
+                <button
+                  className="bubble-action-btn"
+                  onClick={() => {
+                    setQaResponse(null);
+                    setQaInput("");
+                  }}
+                >
+                  Ask another question
+                </button>
+                <button
+                  className="bubble-action-btn"
+                  onClick={() => setStep(STEPS.DOWNLOAD)}
+                >
+                  Finish & Download Budget Spreadsheet
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
-      {/* Spreadsheet download */}
-      {step === 6 + incomeSources.length + expenseCategories.length && (
-        <div className="bot-bubble">
+      {/* === Download Step === */}
+      {step === STEPS.DOWNLOAD && (
+        <div className="bot-bubble bubble-animate">
           <p>Download your budget template as a spreadsheet</p>
-          <button onClick={download} disabled={loading}>Download</button>
+          <button
+            className="bubble-action-btn"
+            onClick={downloadSpreadsheet}
+            disabled={loading}
+          >
+            Download
+          </button>
           {spreadsheetUrl && (
             <a href={spreadsheetUrl} download="budget.xlsx">Click here if your download does not start.</a>
           )}
         </div>
       )}
-      {/* Done */}
-      {step > 6 + incomeSources.length + expenseCategories.length && (
-        <div className="bot-bubble"><p>Thank you for using FinBot! Refresh to start over.</p></div>
-      )}
     </div>
-  );
+  ); 
 }

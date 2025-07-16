@@ -1,131 +1,70 @@
 import os
 from dotenv import load_dotenv
-load_dotenv()
-#from langchain.chat_models import ChatOpenAI
 from langchain_community.chat_models import ChatOpenAI
-#from langchain_openai import ChatOpenAI
 from langchain.memory import ConversationBufferMemory
 from langchain.chains import ConversationChain
-from langchain.schema.output import ChatGeneration, Generation
-from langchain.output_parsers.openai_functions import JsonOutputFunctionsParser
 
-# Load API key from .env
+load_dotenv()
 openai_api_key = os.getenv("OPENAI_API_KEY")
+MODEL_NAME = "gpt-3.5-turbo-1106"
 
 llm = ChatOpenAI(
-    model="gpt-3.5-turbo",
+    model=MODEL_NAME,
     temperature=0.7,
     api_key=openai_api_key,
-    model_kwargs={"response_format": "json"}
+    model_kwargs={"response_format": {"type": "json_object"}}
 )
 
 memory = ConversationBufferMemory(return_messages=True)
-
 conversation = ConversationChain(
     llm=llm,
     memory=memory,
     verbose=True
 )
 
-user_state = {
-    "step": "ask_name",
-    "name": "",
-    "goal": "",
-    "insight_requested": False,
-    "insight_text": "",
-    "income": {},
-    "expenses": {}
-}
+def build_json_system_prompt():
+    return (
+        "You are a helpful budgeting coach for college students. "
+        "Always respond ONLY with a valid JSON object. "
+        "The JSON must contain: "
+        "'summary' (one or two short sentences summarizing the user's situation or answering the question), and "
+        "'tips' (an array of 2-5 actionable, student-friendly, concrete budgeting tips—each under 25 words). "
+        "Make tips positive, specific, and practical. "
+        "Never include any text or formatting outside the JSON object."
+        ' Example: {"summary": "...", "tips": ["...", "..."]}'
+    )
 
-income_categories = ["Part-time job", "Scholarships", "Parental support", "Freelance gigs", "Others"]
-expense_categories = ["Rent", "Groceries", "Tuition", "Transportation", "Emergency Fund", "Eating out", "Car Insurance", "Credit Card Payments", "Textbooks", "Utilities", "Others"]
+def build_insights_prompt(name, goal, income, expenses):
+    income_clean = {k: v if v not in [None, "None", ""] else 0 for k, v in income.items()}
+    expenses_clean = {k: v if v not in [None, "None", ""] else 0 for k, v in expenses.items()}
+    return (
+        f"User: {name}\n"
+        f"Goal: {goal}\n"
+        f"Income: {income_clean}\n"
+        f"Expenses: {expenses_clean}\n\n"
+        "Please answer in JSON as described in the instructions."
+    )
 
-def extract_number(text):
-    import re
-    match = re.search(r"\d+", text.replace(',', ''))
-    return int(match.group()) if match else 0
+def build_qna_prompt(name, goal, income, expenses, qna):
+    income_clean = {k: v if v not in [None, "None", ""] else 0 for k, v in income.items()}
+    expenses_clean = {k: v if v not in [None, "None", ""] else 0 for k, v in expenses.items()}
+    return (
+        f"User: {name}\n"
+        f"Goal: {goal}\n"
+        f"Income: {income_clean}\n"
+        f"Expenses: {expenses_clean}\n"
+        f"Question: {qna}\n\n"
+        "Please answer in JSON as described in the instructions."
+    )
 
-def format_dict_as_bullet_list(title, data):
-    lines = [f"{title}:"]
-    for key, value in data.items():
-        lines.append(f"• {key}: ${value}")
-    return "\n".join(lines)
-
-def run_chatbot(user_input: str) -> str:
-    step = user_state["step"]
-
-    if user_input.lower() in ["restart", "start over", "reset", "refresh"]:
-        user_state.update({
-            "step": "ask_name",
-            "name": "",
-            "goal": "",
-            "insight_requested": False,
-            "insight_text": "",
-            "income": {},
-            "expenses": {}
-        })
-        return "Let's start fresh.\nWhat's your name?"
-
-    if step == "ask_name":
-        user_state["name"] = user_input.strip().title()
-        user_state["step"] = "ask_goal"
-        return f"Nice to meet you, {user_state['name']}!\nWhat is your main financial goal right now?\n(For example: Save for school, Pay off debt, Build emergency fund, Budget better, Other)"
-
-    if step == "ask_goal":
-        user_state["goal"] = user_input.strip()
-        user_state["step"] = "collect_income_0"
-        return f"Thanks, {user_state['name']}!\nLet's start building your budget.\nHow much do you earn monthly from your Part-time job?"
-
-    if step.startswith("collect_income_"):
-        idx = int(step.split("_")[-1])
-        category = income_categories[idx]
-        user_state["income"][category] = extract_number(user_input)
-
-        if idx + 1 < len(income_categories):
-            user_state["step"] = f"collect_income_{idx + 1}"
-            next_cat = income_categories[idx + 1]
-            return f"Thanks!\nHow much do you receive monthly from {next_cat}?"
-        else:
-            user_state["step"] = "collect_expense_0"
-            return f"Great!\nNow let's look at your expenses.\nHow much do you spend on Rent?"
-
-    if step.startswith("collect_expense_"):
-        idx = int(step.split("_")[-1])
-        category = expense_categories[idx]
-        user_state["expenses"][category] = extract_number(user_input)
-
-        if idx + 1 < len(expense_categories):
-            user_state["step"] = f"collect_expense_{idx + 1}"
-            next_cat = expense_categories[idx + 1]
-            return f"Got it.\nAnd how much do you spend on {next_cat}?"
-        else:
-            user_state["step"] = "summary"
-            income = format_dict_as_bullet_list("Income", user_state["income"])
-            expenses = format_dict_as_bullet_list("Expenses", user_state["expenses"])
-            summary = (
-                f"Here's your budget summary, {user_state['name']}:\n\n"
-                f"{income}\n\n"
-                f"{expenses}\n\n"
-                "Would you like tailored insights about your financial management based on your goal?"
-            )
-            return summary
-
-    if step == "summary":
-        if any(word in user_input.lower() for word in ["yes", "yeah", "yep", "sure", "ok"]):
-            user_state["insight_requested"] = True
-            user_state["step"] = "insights"
-            prompt = (
-                f"My financial goal is: {user_state['goal']}\n"
-                f"My income sources: {user_state['income']}\n"
-                f"My expense categories: {user_state['expenses']}\n"
-                "Based on this, give me insights or tips to improve my financial management as a student."
-            )
-            user_state["insight_text"] = conversation.predict(input=prompt)
-            return user_state["insight_text"]
-        else:
-            return "No worries! Your budget template is ready.\nClick the 'Export Budget Spreadsheet' button if you'd like to download it."
-
-    if step == "insights":
-        return "Your budget is ready. Click the 'Export Budget Spreadsheet' button to download it."
-
-    return conversation.predict(input=user_input)
+def get_structured_llm_response(messages):
+    print("\n📤 [DEBUG] Calling OpenAI LLM with messages:")
+    for m in messages:
+        print(f"  {m['role']}: {m['content'][:300]}{'...' if len(m['content']) > 300 else ''}")
+    response = conversation.llm.client.create(
+        model=MODEL_NAME,
+        messages=messages,
+        response_format={"type": "json_object"}
+    )
+    print("\n📥 [DEBUG] Full raw LLM response:", response)
+    return response.choices[0].message.content

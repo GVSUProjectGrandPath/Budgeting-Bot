@@ -153,9 +153,7 @@ const askQuestion = async () => {
       }
     });
 
-    setQaResponse(res.data.response);
-
-    // Render as a chat bubble (bot message)
+    // Add the answer to the chat bubble area
     if (typeof res.data.response === "object" && res.data.response !== null && "summary" in res.data.response) {
       let answer = res.data.response.summary;
       if (res.data.response.tips && res.data.response.tips.length > 0) {
@@ -165,28 +163,43 @@ const askQuestion = async () => {
     } else {
       addMessage("bot", res.data.response);
     }
+
     setQaInput("");
+    setQaResponse(true); // Only used to show/hide the buttons, not for answer rendering
   } catch (error) {
-    setQaResponse("Sorry, could not get an answer.");
     addMessage("bot", "Sorry, could not get an answer.");
+    setQaResponse(true);
   }
   setLoading(false);
 };
 
 
+
   // Download spreadsheet
   const downloadSpreadsheet = async () => {
-    setLoading(true);
-    try {
-      const res = await axios.post("http://localhost:8000/export-budget", userState, { responseType: "blob" });
-      const url = URL.createObjectURL(new Blob([res.data]));
-      setSpreadsheetUrl(url);
-      addMessage("bot", "Your budget spreadsheet is ready!");
-    } catch (err) {
-      alert("Download failed.");
-    }
-    setLoading(false);
-  };
+  setLoading(true);
+  try {
+    const res = await axios.post("http://localhost:8000/export-budget", userState, { responseType: "blob" });
+    const url = URL.createObjectURL(new Blob([res.data]));
+
+    // Programmatically create and click the anchor
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "budget.xlsx";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+
+    // For fallback link
+    setSpreadsheetUrl(url);
+
+    addMessage("bot", "Your budget spreadsheet is ready!");
+  } catch (err) {
+    alert("Download failed.");
+  }
+  setLoading(false);
+};
+
 
   const fontSizePct = Math.round(fontSize * 100);
 
@@ -281,64 +294,40 @@ const askQuestion = async () => {
 
       {/* === Q&A Step === */}
       {step === STEPS.QNA && (
-        <div className="bot-bubble bubble-animate">
-          <label htmlFor="qna-input">Ask a question about your budget or money:</label>
-          <input
-            id="qna-input"
-            type="text"
-            ref={inputRef}
-            value={qaInput}
-            onChange={e => setQaInput(e.target.value)}
-            onKeyDown={e => e.key === "Enter" && askQuestion()}
-            aria-label="Your budgeting question"
-            style={{ marginTop: 6, marginBottom: 10 }}
-            disabled={loading}
-          />
-          <button
-            className="bubble-action-btn"
-            onClick={askQuestion}
-            disabled={loading || !qaInput.trim()}
-          >
-            {loading ? "Thinking..." : "Ask"}
-          </button>
-          {qaResponse && (
-            <div style={{ marginTop: 14 }}>
-              {typeof qaResponse === "object" && qaResponse !== null && "summary" in qaResponse && "tips" in qaResponse ? (
-                <>
-                  <strong>Answer:</strong>
-                  <div style={{ margin: "10px 0" }}>{qaResponse.summary}</div>
-                  {qaResponse.tips && qaResponse.tips.length > 0 && (
-                    <ul style={{ marginBottom: 12 }}>
-                      {qaResponse.tips.map((tip, i) => (
-                        <li key={i} style={{ marginLeft: 12 }}>{tip}</li>
-                      ))}
-                    </ul>
-                  )}
-                </>
-              ) : (
-                <div>{qaResponse}</div>
-              )}
-              <div style={{ display: "flex", gap: 10, marginTop: 8 }}>
-                <button
-                  className="bubble-action-btn"
-                  onClick={() => {
-                    setQaResponse(null);
-                    setQaInput("");
-                  }}
-                >
-                  Ask another question
-                </button>
-                <button
-                  className="bubble-action-btn"
-                  onClick={() => setStep(STEPS.DOWNLOAD)}
-                >
-                  Finish & Download Budget Spreadsheet
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
+  <div className="bot-bubble bubble-animate">
+    <label htmlFor="qna-input">Ask a question about your budget or money:</label>
+    <input
+      id="qna-input"
+      type="text"
+      ref={inputRef}
+      value={qaInput}
+      onChange={e => setQaInput(e.target.value)}
+      onKeyDown={e => e.key === "Enter" && askQuestion()}
+      aria-label="Your budgeting question"
+      style={{ marginTop: 6, marginBottom: 10, width: "100%" }}
+      disabled={loading}
+    />
+    <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 8, width: "100%" }}>
+      <button
+        className="bubble-action-btn"
+        style={{ width: "100%" }}
+        onClick={askQuestion}
+        disabled={loading || !qaInput.trim()}
+      >
+        {loading ? "Thinking..." : "Ask"}
+      </button>
+      <button
+        className="bubble-action-btn"
+        style={{ width: "100%" }}
+        onClick={() => setStep(STEPS.DOWNLOAD)}
+      >
+        Download
+      </button>
+    </div>
+  </div>
+)}
+
+
       {/* === Download Step === */}
       {step === STEPS.DOWNLOAD && (
         <div className="bot-bubble bubble-animate">

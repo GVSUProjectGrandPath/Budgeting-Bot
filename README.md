@@ -2,11 +2,23 @@
 # FinBot: AI Budgeting Assistant
 
 ## Backend Setup
-1. Install Python dependencies:
+1. Create a Python virtual environment for the project:
+   Example:
+   ```
+   python -m venv venv
+   ```
+
+   ```
+   venv\\Scripts\\activate 
+   ```
+2. Install Python dependencies:
    ```
    pip install -r backend/requirements.txt
    ```
-2. Add your OpenAI API key to a `.env` file in `backend/app`:
+3. Add your OpenAI API key to a `.env` file in `backend/app`:
+
+   Log in to your OpenAI account and buy credits.
+   Go to [Platform OpenAI](https://platform.openai.com/settings/organization/api-keys) and press/create 'Create new secret key'
    ```
    OPENAI_API_KEY=sk-xxxxxxx
    ```

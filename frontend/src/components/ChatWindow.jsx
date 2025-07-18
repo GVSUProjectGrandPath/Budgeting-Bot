@@ -269,7 +269,7 @@ const askQuestion = async () => {
         (step >= STEPS.INCOME_START && step < STEPS.EXPENSE_START) ||
         (step >= STEPS.EXPENSE_START && step < STEPS.QNA)) && (
         <div className="input-row">
-          <input
+          <textarea
             ref={inputRef}
             type={step >= STEPS.INCOME_START && step < STEPS.QNA ? "number" : "text"}
             value={input}
@@ -279,7 +279,7 @@ const askQuestion = async () => {
             style={{ flex: 1, minWidth: 0 }}
             disabled={loading}
             tabIndex={0}
-          />
+          ></textarea>
           <button
             className="bubble-action-btn"
             onClick={handleBudgetStepper}

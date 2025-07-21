@@ -202,6 +202,30 @@ const askQuestion = async () => {
 
 
   const fontSizePct = Math.round(fontSize * 100);
+  const maxHeight = useRef(0);
+  // expand height of user input box dependent on lines of text.
+  const handleInput = () => {
+    const textarea = inputRef.current;
+
+    if (textarea) {
+
+      const lineHeight = parseFloat(window.getComputedStyle(textarea).lineHeight);
+      console.log(`actual line height: ${lineHeight}`)
+      const numberOfLines = Math.floor(textarea.scrollHeight / lineHeight);
+      console.log(`# of lines: ${numberOfLines}`)
+
+      textarea.style.height = 'auto';
+
+      if (numberOfLines < 16) {
+        textarea.style.height = textarea.scrollHeight + 'px';  // Grow or shrink freely
+      } else if (numberOfLines === 16) {
+        maxHeight.current = textarea.scrollHeight + 'px';
+        textarea.style.height = maxHeight.current;  // Lock at max height when over 6 lines
+      } else {
+        textarea.style.height = maxHeight.current;
+      }
+    }
+  }
 
   // Chat rendering (with CSS Grid for avatars and bubbles)
   return (
@@ -270,15 +294,19 @@ const askQuestion = async () => {
         (step >= STEPS.EXPENSE_START && step < STEPS.QNA)) && (
         <div className="input-row">
           <textarea
+            class="autoExpand"
             ref={inputRef}
-            type={step >= STEPS.INCOME_START && step < STEPS.QNA ? "number" : "text"}
+            // type={step >= STEPS.INCOME_START && step < STEPS.QNA ? "number" : "text"}
             value={input}
+            onInput={handleInput}
             onChange={e => setInput(e.target.value)}
             onKeyDown={e => e.key === "Enter" && handleBudgetStepper()}
             aria-label="Your answer"
             style={{ flex: 1, minWidth: 0 }}
             disabled={loading}
             tabIndex={0}
+            rows="1"
+            placeholder="Type Your Answer..."
           ></textarea>
           <button
             className="bubble-action-btn"

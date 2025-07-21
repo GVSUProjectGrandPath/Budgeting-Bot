@@ -171,28 +171,28 @@
 }
 
 /* ===== INPUT + BUTTON ROW ===== */
-.input-row {
-  display: flex;
-  gap: 0.85em;
-  align-items: stretch;
-  margin-bottom: 0.2em;
-}
-input[type="text"], input[type="number"] {
-  padding: 0.7em 1.3em;
+
+textarea {
+  padding: 0.5em 1.3em 0em;
   border-radius: 22px;
-  border: 1.8px solid #b1cced;
+  border: 2.8px solid #b1cced;
   font-size: 1.08em;
   background: #f5faff;
   outline: none;
   box-shadow: none;
+  width: 75%;
+  height: 1.8em;
+  line-height: 1.2em;
+  /* height: 3vh; */
   transition: border 0.15s, background 0.13s;
 }
-input[type="text"]:focus, input[type="number"]:focus {
-  border-color: #388be4;
+textarea:focus {
+  /* border-color: #388be4; */
+  border: 4.3px solid #388be4;
   background: #e9f1fb;
 }
-.chat-window-modern.dark input,
-.chat-window-modern.dark input:focus {
+.chat-window-modern.dark textarea,
+.chat-window-modern.dark textarea:focus {
   background: #232d48;
   color: #f7fcff;
   border-color: #3e5d98;
@@ -277,7 +277,7 @@ input[type="text"]:focus, input[type="number"]:focus {
 }
 
 /* ===== FOCUS & ACCESSIBILITY ===== */
-input:focus, button:focus, a:focus, .bubble-animate:focus {
+button:focus, a:focus, .bubble-animate:focus {
   outline: 2.5px solid #33aaff !important;
   outline-offset: 2px;
   z-index: 2;

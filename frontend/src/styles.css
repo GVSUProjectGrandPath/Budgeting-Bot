@@ -1,10 +1,10 @@
 :root {
-  --finbot-yellow: #f1f0e7;
-  --finbot-purple: #d8a6cc;
-  --finbot-brown: #603D20;
-  --finbot-blue: #a3d3e4;
-  --finbot-peach: #e7ada4;
-  --finbot-teal: #82b8ac;
+  --finbot-yellow: #fedb00;
+  --finbot-purple: #a52c87;
+  --finbot-brown: #603d20;
+  --finbot-blue: #5bc2e7;
+  --finbot-peach: #ff8674;
+  --finbot-teal: #44b59d;
 
   --bubble-bg-bot: var(--finbot-blue);
   --bubble-bg-user: var(--finbot-purple);
@@ -12,7 +12,7 @@
   --bubble-text-user: #fff;
   --window-bg: #fffbea;
   --window-dark-bg: #221835;
-  --toolbar-bg: var(--finbot-teal);
+  --toolbar-bg: var(--finbot-yellow);
   --toolbar-fg: var(--finbot-brown);
   --btn-bg: var(--finbot-teal);
   --btn-bg-hover: var(--finbot-purple);
@@ -70,7 +70,7 @@ body {
 }
 
 .theme-toggle-btn {
-  background: var(--finbot-peach);
+  background: var(--finbot-teal);
   color: var(--finbot-brown);
   border-radius: 18px;
   font-size: 1rem;
@@ -83,7 +83,7 @@ body {
 }
 
 .font-size-btn {
-  background: var(--finbot-yellow);
+  background: var(--finbot-teal);
   color: var(--finbot-brown);
   border-radius: 12px;
   font-size: 1.09em;
@@ -97,8 +97,8 @@ body {
 }
 
 .restart-btn {
-  background: var(--finbot-brown);
-  color: var(--finbot-yellow);
+  background: var(--finbot-teal);
+  color: var(--finbot-brown);
   border-radius: 13px;
   font-size: 0.97em;
   font-weight: 600;
@@ -107,7 +107,7 @@ body {
   transition: background 0.13s, color 0.13s;
 }
 .restart-btn:focus, .restart-btn:hover {
-  background: var(--finbot-yellow);
+  background: var(--finbot-purple);
   color: var(--finbot-brown);
 }
 
@@ -163,7 +163,7 @@ body {
   color: #fff;
 }
 .chat-window-modern.dark .user-bubble {
-  background: var(--finbot-yellow);
+  background: var(--finbot-blue);
   color: var(--finbot-brown);
 }
 

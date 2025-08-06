@@ -15,10 +15,10 @@ const STEPS = {
 };
 
 const incomeSources = [
-  "Job", "Side-hustle", "Family support", "Scholarships", "Reimbursements", "Tax refunds"
+  "job", "side-hustle", "family support", "scholarships", "other incomes"
 ];
 const expenseCategories = [
-  "Rent", "Groceries", "Utilities", "Transport", "Tuition", "Dining out", "Entertainment", "Other"
+  "rent", "groceries", "utilities", "transport", "car insurance", "credit card repayments", "Door Dash", "tuition", "subscriptions", "dining out", "entertainment", "other expenses"
 ];
 
 export default function ChatWindow() {
@@ -39,7 +39,7 @@ export default function ChatWindow() {
   const [loading, setLoading] = useState(false);
 
   const [messages, setMessages] = useState([
-    { from: "bot", text: "Hello, I am FinBot, your AI Budgeting Assistant.\nGet ready to answer some questions.\n What is your name?" }
+    { from: "bot", text: "Hello, I am REP4ⓇFinLit, your AI Budgeting Assistant.\nGet ready to answer some questions about your income and expenses.\n What is your name?" }
   ]);
   const inputRef = useRef(null);
   const chatEndRef = useRef(null);
@@ -54,7 +54,7 @@ export default function ChatWindow() {
 
   const handleRestart = () => {
     setMessages([
-      { from: "bot", text: "Hello, I am FinBot, your AI Budgeting Assistant.\nGet ready to answer some questions.\n What is your name?" }
+      { from: "bot", text: "Hello, I am REP4ⓇFinLit, your AI Budgeting Assistant.\nGet ready to answer some questions about your income and expenses.\n What is your name?" }
     ]);
     setStep(STEPS.NAME);
     setUserState({
@@ -127,7 +127,7 @@ export default function ChatWindow() {
         }, 350);
       } else {
         setTimeout(() => {
-          addMessage("bot", "All set! Now you can ask me any question about your income, spending or money management.\n I'll give you actionable tips based on your info.");
+          addMessage("bot", "All set! Now you can ask me any question about your income, spending or money management.\n I'll give you actionable tips based on the information you provided.");
           setStep(STEPS.QNA);
         }, 350);
       }

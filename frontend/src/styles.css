@@ -12,12 +12,12 @@
   --bubble-text-user: #fff;
   --window-bg: #fffbea;
   --window-dark-bg: #221835;
-  --toolbar-bg: var(--finbot-yellow);
+  --toolbar-bg: var(--finbot-teal);
   --toolbar-fg: var(--finbot-brown);
-  --btn-bg: var(--finbot-teal);
-  --btn-bg-hover: var(--finbot-purple);
+  --btn-bg: var(--finbot-yellow);
+  --btn-bg-hover: var(--finbot-peach);
   --btn-text: #fff;
-  --btn-border: var(--finbot-brown);
+  --btn-border: var(--finbot-purple);
   --input-bg: #fdf4ee;
   --input-border: var(--finbot-purple);
 }
@@ -70,7 +70,7 @@ body {
 }
 
 .theme-toggle-btn {
-  background: var(--finbot-teal);
+  background: var(--finbot-yellow);
   color: var(--finbot-brown);
   border-radius: 18px;
   font-size: 1rem;
@@ -78,12 +78,12 @@ body {
   transition: background 0.18s, color 0.19s;
 }
 .theme-toggle-btn:focus, .theme-toggle-btn:hover {
-  background: var(--finbot-purple);
+  background: var(--finbot-peach);
   color: #fff;
 }
 
 .font-size-btn {
-  background: var(--finbot-teal);
+  background: var(--finbot-yellow);
   color: var(--finbot-brown);
   border-radius: 12px;
   font-size: 1.09em;
@@ -92,12 +92,12 @@ body {
   transition: background 0.13s, color 0.13s;
 }
 .font-size-btn:focus, .font-size-btn:hover {
-  background: var(--finbot-purple);
+  background: var(--finbot-peach);
   color: #fff;
 }
 
 .restart-btn {
-  background: var(--finbot-teal);
+  background: var(--finbot-yellow);
   color: var(--finbot-brown);
   border-radius: 13px;
   font-size: 0.97em;
@@ -107,7 +107,7 @@ body {
   transition: background 0.13s, color 0.13s;
 }
 .restart-btn:focus, .restart-btn:hover {
-  background: var(--finbot-purple);
+  background: var(--finbot-peach);
   color: var(--finbot-brown);
 }
 
@@ -256,7 +256,7 @@ input[type="text"]:focus, input[type="number"]:focus {
 }
 .chat-window-modern.dark .bubble-action-btn:hover,
 .chat-window-modern.dark .bubble-action-btn:focus {
-  background: var(--finbot-blue);
+  background: var(--finbot-peach);
   color: #fff;
   border-color: var(--finbot-yellow);
 }

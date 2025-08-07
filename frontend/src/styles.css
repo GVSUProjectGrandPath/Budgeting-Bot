@@ -322,3 +322,7 @@ input:focus, button:focus, a:focus, .bubble-animate:focus {
 .bot-bubble, .user-bubble {
   grid-area: bubble;
 }
+
+.bot-bubble, .user-bubble {
+  display: block !important;
+}

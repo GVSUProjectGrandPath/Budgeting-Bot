@@ -28,19 +28,15 @@ Budgeting-AI/
 ```
 
 ---
-## Clone the project to your local machine
+## Get the project to your local machine
 
    Follow instructions in the following link on how to clone a Git repository
 
    [Cloning a Git Repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository)
 
 
-Setting Up the Backend (AI & API)
-
-**The backend powers the chatbot’s brain using Python and OpenAI.**
-
 Install Python (if needed)
-[Download Python here](https://www.python.org/downloads/)
+[Download Python here](https://www.python.org/downloads/) -Python 3
 
 Open a terminal and naviagte to the project folder:
    ```
@@ -48,6 +44,11 @@ Open a terminal and naviagte to the project folder:
    ```
 
 ## Backend Setup
+
+Setting Up the Backend (AI & API)
+
+The backend powers the chatbot’s brain using Python and OpenAI.
+
 1. Create and activate a Python virtual environment for the project:
 
    Example:
@@ -56,12 +57,12 @@ Open a terminal and naviagte to the project folder:
    ```
    Activate the python virtual environment:
 
-   On Windows
+   a. On Windows
    ```
    venv\\Scripts\\activate 
    ```
 
-   On Mac/Linux
+   b. On Mac/Linux
    ```
    source venv/bin/activate
     ```
@@ -78,6 +79,9 @@ Open a terminal and naviagte to the project folder:
    pip install -r requirements.txt
    ```
 3. Add your OpenAI API key to a `.env` file in `backend/app`:
+
+   This `.env` file has to be added to a `.gitignore` file when pushing the project to a public repository to prevent its contents from being exposed.
+
    ```
    cd backend/app
    ```
@@ -90,7 +94,7 @@ Open a terminal and naviagte to the project folder:
 
    Go to [Platform OpenAI](https://platform.openai.com/settings/organization/api-keys) 
    
-   Create a new API key and copy it. Store it somewhere secure
+   Create a new API key and copy it. Store it somewhere secure (once you leave the page, you will not access the API key again).
 
    Replace the 'xxxxx' in the code below with your API key and copy paste the line of code to your `.env` file
    ```
@@ -98,7 +102,9 @@ Open a terminal and naviagte to the project folder:
    ```
 3. Run/start the FastAPI backend server:
 
-   With your virtual environment active run
+   With your virtual environment active, run:
+
+   Uvicorn was installed early in the dependencies installation.
    ```
    uvicorn app.main:app --reload --port 8000
    ```
@@ -111,6 +117,8 @@ Install Node.js (if needed)
 [Download Node.js here](https://nodejs.org/).
 
 1. Navigate to the frontend in a new terminal window:
+
+   Ensure you are in the project root.
    ```
    cd frontend
    ```
@@ -126,7 +134,7 @@ Install Node.js (if needed)
    The chat will open at [http://localhost:3000](http://localhost:3000)
 
 ## Using REP4ⓇFinLit Chatbot
-   The chatbot will walk you through:
+### The chatbot will walk you through:
   1. Entering your name
   2. Setting a financial goal
   3. Adding your income sources
@@ -136,7 +144,7 @@ Install Node.js (if needed)
 
 ---
 
-✨ Key Features
+### Key Features
 
 + **Conversational stepper:** Easy, guided entry for name, goal, income, expenses, and more
 
@@ -150,7 +158,7 @@ Install Node.js (if needed)
 
 ---
 
-✨ Troubleshooting & Debugging Tips
+### Troubleshooting & Debugging Tips
 
 **The chatbot doesn’t respond?**
   - Ensure both backend and frontend servers are running.
@@ -166,11 +174,13 @@ Install Node.js (if needed)
   - Check your `.env` setup
   - Restart your terminal, double-check your setup, and try again.
   - Add print statements to ensure:
-  All AI context (name, goal, income, expenses) is sent in a single message for compatibility and transparency. Both backend and frontend print debug info (see browser console and backend terminal).
+  
+      a. All AI context (name, goal, income, expenses) is sent in a single message for compatibility and transparency.  
+      b. Both backend and frontend print debug info (see browser console and backend terminal).
 
 ---
 
-✨ For Developers
+### For Developers
 
 + Backend is Python (FastAPI); frontend is React (Create React App).
 
@@ -182,7 +192,7 @@ Install Node.js (if needed)
 
 ---
 
-✨ Acknowledgments
+### Acknowledgments
 
 Powered by OpenAI, LangChain, FastAPI, and React.
 
